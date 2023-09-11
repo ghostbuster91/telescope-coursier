@@ -19,6 +19,7 @@ M.coursier = function(opts)
         if not prompt or prompt == "" or #prompt < 3 then
             return nil
         end
+        --TODO this is a hack. It would be better to just prepend prompt value to the finder results
         current_prompt = prompt
         return flatten { "cs", "complete-dep", prompt }
     end, function(entry)
