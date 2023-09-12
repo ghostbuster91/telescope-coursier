@@ -1,9 +1,11 @@
 local pickers = require "telescope.pickers"
-local finders = require "telescope.finders"
+local finders = require("telescope.finders")
 local conf = require("telescope.config").values
 local make_entry = require "telescope.make_entry"
 local actions = require "telescope.actions"
+local action_state = require("telescope.actions.state")
 local coursier_actions = require("telescope-coursier.actions")
+local transform_mod = require('telescope.actions.mt').transform_mod
 
 local flatten = vim.tbl_flatten
 local M = {}
@@ -47,10 +49,27 @@ M.coursier = function(opts)
         prompt_title = "coursier",
         finder = live_grepper,
         sorter = conf.generic_sorter(opts),
-        attach_mappings = function(prompt_buffer, _)
+        attach_mappings = function(prompt_buffer, map)
             actions.select_default:replace(function()
                 coursier_actions.insert_text_into_register(prompt_buffer)
             end)
+            local K = {}
+            K.complete_entry = function(prompt_buffnr)
+                local picker = action_state.get_current_picker(prompt_buffnr)
+                local entry = action_state.get_selected_entry(prompt_buffnr)
+                if entry then
+                    local result = entry.ordinal
+                    local _, c = result:gsub(":", "")
+                    if c < 2 then
+                        result = result .. ":"
+                    end
+                    picker:set_prompt(result)
+                else
+                    vim.notify("No entries to select", vim.log.levels.WARN, { title = "coursier" })
+                end
+            end
+
+            map('i', '<Space>', transform_mod(K).complete_entry)
             return true
         end,
     }):find()
